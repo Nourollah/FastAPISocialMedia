@@ -63,3 +63,18 @@ class Users(Base):
 
     def dict(self):
         return {"name": self.name, "email": self.email, "password": self.password}
+
+
+class Vote(Base):
+    __tablename__ = 'votes'
+    user_id = Column(Integer,
+                     ForeignKey('users.id',
+                                         ondelete='CASCADE',
+                                         onupdate='CASCADE'),
+                     primary_key=True)
+
+    post_id = Column(Integer,
+                     ForeignKey('posts.id',
+                                ondelete='CASCADE',
+                                onupdate='CASCADE'),
+                     primary_key=True)

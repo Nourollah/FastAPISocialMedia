@@ -1,14 +1,13 @@
-from datetime import datetime
 import typing
+from datetime import datetime
 
 import pydantic
-from . import utils
+
 
 class UserCreate(pydantic.BaseModel):
     name: str
     email: pydantic.EmailStr
     password: str
-
 
 
 class UserShow(pydantic.BaseModel):
@@ -24,7 +23,6 @@ class UserShow(pydantic.BaseModel):
 class UserLogin(pydantic.BaseModel):
     email: pydantic.EmailStr
     password: str
-
 
 
 class PostBase(pydantic.BaseModel):
@@ -47,13 +45,29 @@ class Post(PostBase):
         orm_mode = True
 
 
+class PostVote(pydantic.BaseModel):
+    Posts: Post
+    votes: int
+
+    class Config:
+        orm_mode = True
+
+
 class Token(pydantic.BaseModel):
     access_token: str
     token_type: str
-
 
 
 class TokenData(pydantic.BaseModel):
     idx: typing.Optional[str] = None
 
 
+class Vote(pydantic.BaseModel):
+    post_id: int
+    direction: int
+
+    @pydantic.validator('direction')
+    def direction_must_be_1_or_zero(cls, v):
+        if v not in (1, 0):
+            raise ValueError('direction must be 1 or 0')
+        return v

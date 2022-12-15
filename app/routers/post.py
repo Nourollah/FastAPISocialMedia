@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status, Depends
-from sqlalchemy import orm
 from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException, status, Depends
+from sqlalchemy import orm, func
 
 from .. import models, schemas, database, oauth2
 
@@ -10,27 +11,47 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=List[schemas.Post])
+# @router.get("/", response_model=List[schemas.Post])
+@router.get("/", response_model=List[schemas.PostVote])
 async def get_posts(db: orm.Session = Depends(database.get_db),
                     current_user: schemas.UserLogin = Depends(oauth2.get_current_user),
                     limit: int = 10,
                     skip: int = 0,
                     search: Optional[str] = ''):
-    return db.query(models.Posts).filter(models.Posts.title.contains(search)).limit(limit).offset(skip).all()
+    return db.query(models.Posts,
+                    func.count(models.Vote.post_id).
+                    label('votes')). \
+        join(models.Vote,
+             models.Vote.post_id == models.Posts.id,
+             isouter=True). \
+        group_by(models.Posts.id). \
+        filter(models.Posts.title.contains(search)). \
+        limit(limit).offset(skip). \
+        all()
 
 
-@router.get("/{idx}", response_model=schemas.Post)
+@router.get("/{idx}", response_model=schemas.PostVote)
 async def get_one_posts(idx: int,
                         db: orm.Session = Depends(database.get_db),
                         current_user: schemas.UserLogin = Depends(oauth2.get_current_user)):
-    return db.query(models.Posts).filter(models.Posts.id == idx).first()
+    return db.query(models.Posts,
+                    func.count(models.Vote.post_id).
+                    label('votes')). \
+        filter(models.Posts.id == idx). \
+        join(models.Vote,
+             models.Vote.post_id == models.Posts.id,
+             isouter=True). \
+        group_by(models.Posts.id). \
+        first()
+
 
 @router.get("/{idx}", response_model=schemas.Post)
 async def get_user_posts(idx: int,
-                        db: orm.Session = Depends(database.get_db),
-                        current_user: schemas.UserLogin = Depends(oauth2.get_current_user)):
-
-    posts = db.query(models.Posts).filter(models.Posts.owner_id == current_user.id).all()
+                         db: orm.Session = Depends(database.get_db),
+                         current_user: schemas.UserLogin = Depends(oauth2.get_current_user)):
+    posts = db.query(models.Posts). \
+        filter(models.Posts.owner_id == current_user.id). \
+        all()
 
     if posts.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
@@ -42,7 +63,6 @@ async def get_user_posts(idx: int,
 async def post_item(payload: schemas.PostCreate,
                     db: orm.Session = Depends(database.get_db),
                     current_user: schemas.UserLogin = Depends(oauth2.get_current_user)):
-
     new_post = models.Posts(owner_id=current_user.id, **payload.dict())
 
     db.add(new_post)
@@ -57,7 +77,8 @@ async def update_item(idx: int,
                       post: schemas.PostCreate,
                       db: orm.Session = Depends(database.get_db),
                       current_user: schemas.UserLogin = Depends(oauth2.get_current_user)):
-    item_query = db.query(models.Posts).filter(models.Posts.id == idx)
+    item_query = db.query(models.Posts). \
+        filter(models.Posts.id == idx)
     item = item_query.first()
 
     if item is None:
@@ -76,7 +97,8 @@ async def update_item(idx: int,
 async def delete_item(idx: int,
                       db: orm.Session = Depends(database.get_db),
                       current_user: int = Depends(oauth2.get_current_user)):
-    item_query = db.query(models.Posts).filter(models.Posts.id == idx)
+    item_query = db.query(models.Posts). \
+        filter(models.Posts.id == idx)
 
     post = item_query.first()
 
