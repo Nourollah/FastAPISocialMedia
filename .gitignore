@@ -57,6 +57,7 @@ celerybeat-schedule
 celerybeat.pid
 *.sage.py
 .env
+.env_postgres_docker
 .venv
 env/
 venv/

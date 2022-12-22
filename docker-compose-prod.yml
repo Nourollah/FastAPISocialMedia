@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+
+  api:
+    image: nourollah/fastapi_socialmedia
+    ports:
+      - "80:8000"
+    environment:
+      - DATABASE_HOSTNAME=${DATABASE_HOSTNAME}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=6${ACCESS_TOKEN_EXPIRE}
+    restart: always
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15.1
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=test
+      - POSTGRES_ROOT_PASSWORD=test
+      - POSTGRES_DB=fastapi
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres-db:
