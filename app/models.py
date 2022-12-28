@@ -69,8 +69,8 @@ class Vote(Base):
     __tablename__ = 'votes'
     user_id = Column(Integer,
                      ForeignKey('users.id',
-                                         ondelete='CASCADE',
-                                         onupdate='CASCADE'),
+                                ondelete='CASCADE',
+                                onupdate='CASCADE'),
                      primary_key=True)
 
     post_id = Column(Integer,

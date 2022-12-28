@@ -5,7 +5,7 @@ from . import models, schemas, database
 from .routers import post, user, auth, vote
 
 
-models.Base.metadata.create_all(bind=database.engine)
+# models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware,
