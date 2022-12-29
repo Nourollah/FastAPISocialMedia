@@ -1,5 +1,7 @@
 import unittest
+from jose import jwt
 from . import database
+from app import schemas, settings
 
 
 class TestUsers(database.DatabaseAndClientConfig):
@@ -23,13 +25,17 @@ class TestUsers(database.DatabaseAndClientConfig):
         self.assertEqual(res.status_code, 201)
 
     def test_login_user(self) -> None:
-        _ = self.client.post('/users/',
-                             json={"name": "masoud",
-                                   "email": "masoud@gmail.com",
-                                   "password": "masoud123"})
+        user_data = self.client.post('/users/',
+                                     json={"name": "masoud",
+                                           "email": "masoud@gmail.com",
+                                           "password": "masoud123"})
         res = self.client.post('/login',
                                data={"username": "masoud@gmail.com",
                                      "password": "masoud123"})
+        login_response = schemas.Token(**res.json())
+        payload = jwt.decode(login_response.access_token, settings.secret_key, algorithms=[settings.algorithm])
+        decode_id = payload.get('user_id')
+        self.assertEqual(decode_id, user_data.json('id'))
         self.assertEqual(res.status_code, 202)
 
 
